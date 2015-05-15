@@ -2,6 +2,7 @@ package network
 
 import (
 	"fmt"
+	"github.com/xeniumd-china/vitamin/concurrent"
 	"net"
 	"strings"
 )
@@ -61,4 +62,33 @@ func GetLocalMac() (macs []string, err error) {
 		}
 	}
 	return
+}
+
+//检测IP端口
+func Scanner(addrs []*net.TCPAddr) (result []bool) {
+	if addrs == nil {
+		return nil
+	}
+	if len(addrs) == 0 {
+		return make([]bool, 0)
+	}
+	result = make([]bool, len(addrs))
+	cdl := concurrent.NewCountDownLatch(len(addrs))
+	for index, addr := range addrs {
+		go func(index int, addr *net.TCPAddr) {
+			defer cdl.CountDown()
+
+			conn, err := net.DialTCP("tcp", nil, addr)
+			if err != nil {
+				result[index] = false
+			} else {
+				result[index] = true
+			}
+			if conn != nil {
+				conn.Close()
+			}
+		}(int(index), addr)
+	}
+	cdl.Await()
+	return result
 }

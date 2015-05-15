@@ -1,4 +1,4 @@
-package common
+package concurrent
 
 type CountDownLatch struct {
 	count       int
